@@ -1,0 +1,233 @@
+# Começando
+
+Do zero até uma tela do Figma montada na Unity. Duas partes: a instalação, que se faz uma
+vez, e o ciclo por tela, que é o que vai virar rotina.
+
+---
+
+## Preciso de conta paga no Figma?
+
+**Não para rodar a ferramenta.** Tudo que o pipeline precisa funciona em conta gratuita.
+Mas há dois detalhes que mudam como o time trabalha.
+
+### 1. O plugin em desenvolvimento exige o app desktop do Figma
+
+Isto contraria a suposição inicial de "montar as interfaces no Figma **Web**", então vale ser
+explícito: para carregar um plugin a partir de um `manifest.json` local, o Figma precisa ler
+arquivos do seu disco — e o navegador não pode fazer isso. Não é limitação de plano, é
+limitação de sandbox do navegador.
+
+Três caminhos, do mais simples ao mais burocrático:
+
+| Caminho | Custo | Consequência |
+|---|---|---|
+| **Designers usam o app desktop** | Grátis | Recomendado. Mesma conta, mesmos arquivos, mesmo tudo — só um app instalado |
+| Publicar o plugin privado para a organização | Exige plano Organization | Roda no Web, mas o plugin fica atrelado à org |
+| Publicar público na Community | Grátis | Roda no Web, mas o plugin fica visível para qualquer pessoa |
+
+O app desktop resolve, e o arquivo continua o mesmo na nuvem: o designer pode desenhar no Web
+e só abrir o desktop na hora de exportar, se preferir.
+
+### 2. Biblioteca compartilhada (Library publicada) é recurso pago
+
+Componentes e variantes funcionam em conta gratuita. O que **não** funciona é *publicar* uma
+Library para outros arquivos consumirem — isso é do plano Professional para cima.
+
+Na prática, sem plano pago:
+
+- O kit canônico vive **dentro de um arquivo mestre**, e cada tela nova nasce de uma cópia
+  desse arquivo, ou os componentes são copiados para o arquivo da tela.
+- O exportador funciona igual: ele lê o nome canônico do componente, e não se importa se ele
+  vem de uma Library publicada ou de um componente local.
+- O que se perde é a propagação automática: mudar o botão no kit não atualiza as telas que já
+  existem, porque não há vínculo de Library.
+
+Dá para começar o piloto assim e resolver depois. Só não dá para chamar de design system
+compartilhado — e essa é a diferença que justifica o plano pago quando o time crescer.
+
+**Não precisa de Dev Mode nem de Personal Access Token.** O pipeline não usa a REST API do
+Figma, e o plugin não faz nenhuma chamada de rede (`networkAccess: ["none"]` no manifest).
+Isso é verificável, e é o que faz o fluxo não ter nenhum segredo para vazar.
+
+> Planos e nomes de recurso do Figma mudam com frequência. Confirme os termos atuais antes de
+> decidir compra.
+
+---
+
+## Instalação (uma vez)
+
+### Lado dev — o plugin
+
+```bash
+cd figma-plugin
+npm ci --ignore-scripts
+npm run build          # gera dist/code.js e dist/ui.html
+```
+
+No **Figma desktop**: `Plugins` → `Development` → `Import plugin from manifest...` → escolha
+`manifest.json` do repositório do plugin.
+
+O plugin passa a aparecer em `Plugins` → `Development` → `Arvore UI Exporter`. Cada designer
+que for exportar precisa fazer esse import uma vez, apontando para a mesma pasta (repositório
+clonado, ou uma pasta compartilhada com o `dist/` já buildado).
+
+### Lado dev — a Unity
+
+1. Instale o pacote. No `Packages/manifest.json` do jogo:
+   ```jsonc
+   "com.arvore.uiexporter": "file:../../ui-exporter-tool/unity-package"
+   ```
+   (ou a URL Git do repositório, quando ele estiver publicado)
+
+2. Se o projeto for novo: `Window` → `TextMeshPro` → `Import TMP Essential Resources`. Sem
+   isso não existe fonte default e nenhum texto renderiza.
+
+3. `Window` → `Arvore` → `UI Exporter` → **Gerar kit placeholder**. Cria os 15 prefabs
+   canônicos em `Assets/UI/Generated/Kit`.
+
+4. `Assets` → `Create` → `Arvore` → `UI Exporter` → **Import Settings**. Aponte
+   `Rounded Sprite` para o sprite gerado em `Kit/Sprites`, e — importante em projeto grande —
+   restrinja `Kit Search Folders` à pasta do kit, senão o importador varre todos os prefabs do
+   projeto a cada import.
+
+5. `Assets` → `Create` → `Arvore` → `UI Exporter` → **Font Map**. Mapeie cada família e estilo
+   que o time usa no Figma para o `TMP_FontAsset` correspondente. Sem isso todo texto sai na
+   fonte default, e o relatório avisa em cada import.
+
+### Lado designer — o arquivo do kit
+
+**Tem botão para isso.** No plugin, aba **Criar kit** → `Criar kit nesta página`.
+
+Isso gera, numa página chamada `UI Kit`:
+
+- os **14 componentes canônicos**, com variantes de estado nos botões e propriedades de
+  componente (`label`, `iconLeft`, `iconRight`, `title`) já ligadas;
+- os **estilos de cor e de texto** (`color/primary`, `text/h1`…), que é o que faz os avisos de
+  `hardcoded-color` e `hardcoded-typography` não aparecerem;
+- um frame **`screen/Exemplo`** de 1080×1920 com `SafeArea` dentro, para duplicar e renomear.
+
+Rodar de novo é seguro: componente que já existe na página não é tocado.
+
+Os nomes gerados são exatamente os que o importador da Unity procura — os dois lados são
+gerados por código e há teste garantindo que as listas não divergem. É por isso que vale usar
+o botão em vez de montar na mão: nome digitado errado só aparece como `unknown-component` no
+import, longe de quem pode corrigir.
+
+O que **não** é componente: `Screen`. Na Unity ele é o prefab de Canvas para teste isolado; no
+Figma o equivalente é a convenção de nome do frame, e é por isso que o kit entrega o
+`screen/Exemplo` como template em vez de um componente.
+
+Precisa de algo que não está na lista? Fale com o dono da Library para criar o componente
+canônico, e peça ao dev para criar o prefab equivalente na Unity com o mesmo nome. Improvisar
+com retângulo gera aviso no linter e, na Unity, uma caixa sem comportamento.
+
+> Sem plano pago você não consegue *publicar* essa página como Library. O kit funciona igual —
+> só não propaga para outros arquivos. Ver a seção sobre planos acima.
+
+---
+
+## O ciclo por tela
+
+### Designer, no Figma
+
+1. **Crie o frame raiz** com o nome `screen/NomeDaTela` — PascalCase, sem espaço.
+   O tamanho desse frame é a resolução de referência. Combine um valor por orientação com o
+   time e não varie entre telas do mesmo jogo.
+
+2. **Monte com instâncias** dos componentes do kit. Todo botão é uma instância de
+   `Button/Primary`, não um retângulo com texto em cima — é isso que faz o resultado na Unity
+   ter som de clique, animação de press e navegação por gamepad já funcionando.
+
+3. **Use Auto Layout** onde faz sentido: listas, HUDs, botões que crescem com o texto. É o que
+   impede o texto em português de vazar da caixa.
+
+4. **Ponha constraints** no que está posicionado livremente. Fundo e barras esticam, HUD de
+   canto cola na borda, conteúdo principal centraliza.
+
+5. **Marque os nomes**:
+   - `@PlayButton` no que o código precisa acessar
+   - `_notes` no que é andaime de design e não deve ir para a Unity
+   - `hero#img` em ilustrações, logos, e qualquer coisa com gradiente, sombra ou blur
+   - `title:loc.menu.title` em texto traduzível
+
+6. **Rode o plugin**: selecione o frame raiz → `Plugins` → `Development` → `Arvore UI Exporter`.
+
+7. **Leia o relatório.** Erro bloqueia o export e a mensagem diz o que corrigir. Aviso passa,
+   mas alguém paga depois. Clicar num item leva a viewport até a layer.
+
+8. **Exportar** → o navegador baixa `NomeDaTela.uiexport`. Entregue esse arquivo ao dev, ou
+   deixe na pasta combinada.
+
+O alvo é exportar com **zero avisos**, não "poucos avisos". A referência completa das regras
+está em [`figma-conventions.md`](figma-conventions.md).
+
+### Dev, na Unity
+
+9. `Window` → `Arvore` → `UI Exporter` → **Escolher...** → selecione o `.uiexport`.
+
+10. **Confira o diff.** A janela mostra o que vai ser criado, preservado e **removido**.
+    Remoção é a única operação que destrói trabalho: se um objeto desapareceu do design, o
+    GameObject vai embora e leva o que estava pendurado nele. Nada é escrito até você
+    confirmar.
+
+11. **Importar.** Se houver remoções, aparece uma confirmação extra.
+
+12. **Leia o relatório.** Componente não mapeado, fonte faltando e aproximação de layout são
+    casos em que o import teve sucesso mas o resultado não é o que o designer desenhou.
+
+13. **Trabalhe no Variant**, em `Assets/UI/Screens/NomeDaTela.prefab`. Nunca no `_Base`.
+
+14. **Ligue o código** pelos binds:
+
+    ```csharp
+    var view = screen.GetComponent<UIViewRefs>();
+
+    view.Get<Button>("PlayButton").onClick.AddListener(StartGame);
+    view.Get<TMP_Text>("CoinLabel").text = coins.ToString();
+    ```
+
+    Coloque a tela sob o Canvas do jogo e configure o `CanvasScaler` com
+    `view.DesignResolution`.
+
+Quando o designer mudar a tela e re-exportar, repita do passo 9. O prefab base é atualizado e
+o que você fez no Variant continua lá.
+
+---
+
+## Teste de fumaça em 10 minutos
+
+Antes de envolver o time, vale provar o caminho todo com uma tela mínima:
+
+1. No Figma, crie um frame `screen/Teste` de 1080×1920.
+2. Dentro dele, um retângulo esticado (`constraints: left+right, top+bottom`) como fundo.
+3. Um componente `Button/Primary` com o texto `Jogar`, nomeado `@PlayButton`.
+4. Um texto `@TitleLabel` qualquer.
+5. Rode o plugin, corrija o que o linter apontar, exporte.
+6. Importe na Unity e confira: o fundo estica, o botão é instância do prefab do kit e é
+   clicável, o `UIViewRefs` da raiz tem os dois binds.
+7. Adicione um script no Variant, peça para o designer mover o botão e re-exportar, importe de
+   novo — o script tem que continuar lá.
+
+Se o passo 7 funcionar, o pipeline está de pé.
+
+**Sem acesso ao Figma?** Dá para rodar os passos 6 e 7 usando o pacote de exemplo já
+versionado, sem depender de ninguém:
+
+```bash
+bash tools~/unity-test.sh   # no repo do pacote: roda o pipeline contra Samples~/HomeMenu.uiexport
+```
+
+---
+
+## Quando algo dá errado
+
+| Sintoma | Causa provável |
+|---|---|
+| O plugin não aparece no Figma | `npm run build` não rodou, ou o import apontou para o manifest errado |
+| "Frame raiz fora do padrão" | O frame não se chama `screen/NomeDaTela` |
+| Toda instância virou caixa vazia | O kit não foi gerado, ou `Kit Search Folders` não inclui a pasta dele |
+| Todo texto na fonte errada | Font Map não configurado, ou a família do Figma não está mapeada |
+| Nenhum texto renderiza | TMP Essential Resources não importados |
+| Canto arredondado saiu quadrado | `Rounded Sprite` não configurado nas Import Settings |
+| O trabalho do dev desapareceu | Estava no `_Base` em vez do Variant |
+| "O pacote é da versão X" | Plugin e pacote da Unity em majors diferentes do contrato |
