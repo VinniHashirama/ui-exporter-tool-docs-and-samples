@@ -8,9 +8,9 @@ divergência, **o schema manda**. Este doc explica o *porquê* de cada decisão.
 
 ---
 
-## O pacote `.uiexport`
+## Os dois pacotes
 
-Um zip com nome `<NomeDaTela>.uiexport`:
+**Tela** — um zip com nome `<NomeDaTela>.uiexport`:
 
 ```
 HomeMenu.uiexport
@@ -20,8 +20,100 @@ HomeMenu.uiexport
    └─ logo@2x.png
 ```
 
+**Componente do kit** — um zip com nome `<NomeCanonico>.uikit`:
+
+```
+Button_Primary.uikit
+├─ kit.json             # o mesmo UIIR, com o bloco `kit` presente
+└─ images/
+   └─ button-primary_bg_default@2x.png
+```
+
 Sem outras entradas. O importador **rejeita** o pacote inteiro se encontrar qualquer coisa
 fora desse formato — ver [Segurança](#segurança).
+
+O discriminador é o **nome da entrada JSON**, não o conteúdo: `ui.json` é tela, `kit.json` é
+componente. Um pacote com as duas é recusado. Decidir pelo conteúdo — "tem bloco `kit`, então
+é componente" — faria um pacote de componente com um campo faltando ser importado como tela,
+que é exatamente o tipo de erro silencioso que este contrato evita.
+
+O importador roteia pela extensão do arquivo, então um `.uikit` nunca é aberto como tela por
+engano.
+
+---
+
+## O bloco `kit`
+
+Presente só em `kit.json`. É o que faz o importador gerar um **prefab do kit** em vez de uma
+tela.
+
+```jsonc
+"kit": {
+  "canonicalName": "Button/Primary",
+  "role": "button",                    // button|toggle|container|display|icon|image
+  "sourceVariantId": "12:34",
+  "ignoredVariants": ["State=Pressed", "State=Disabled"],
+  "slots": [ { "name": "label", "nodeId": "12:40" } ]
+}
+```
+
+**`role` existe porque a forma não diz o que a coisa é.** Um retângulo com texto dentro pode
+ser um botão ou um rótulo, e o Figma não distingue os dois. O papel é declarado, não
+adivinhado: ele escolhe o esqueleto de comportamento que a Unity monta por cima da pele que
+veio do design.
+
+**`slots` aponta por `nodeId`, nunca por nome.** Designer renomeia layer o tempo todo; o id
+sobrevive a isso. Os slots são descobertos de duas formas, nesta ordem: pelas propriedades de
+componente que o Figma já declara, e pelo prefixo `$` no nome da layer (`$label`, `$icon`) —
+que é o caminho de quem montou o componente à mão.
+
+**`sourceVariantId` trava a variante de origem.** Cada variante do Figma tem ids de node
+próprios. Exportar de outra variante depois trocaria **todos** os ids de uma vez, e a
+reconciliação, sem reencontrar nada, recriaria o prefab inteiro — mudando os `fileID` que
+todas as telas do jogo referenciam. O importador compara com o id da raiz do prefab atual e
+**recusa** quando mudou.
+
+### O que o prefab do kit ganha, e de quem
+
+| Vem do Figma | Vem da Unity |
+|---|---|
+| sprite, cor, tamanho, raio | `Button`/`Toggle` e os 5 estados por `ColorTint` |
+| Auto Layout, padding, espaçamento | `raycastTarget` na área clicável |
+| fonte, tamanho e alinhamento de texto | slots declarados em `UIKitComponent` |
+| bordas de 9-slice | |
+
+### Titularidade: um prefab só, da ferramenta
+
+```
+Assets/UI/Generated/Kit/<Nome>.prefab    ← DA FERRAMENTA. Reconciliado a cada import.
+```
+
+Sem par base/variante, ao contrário das telas. Em tela o arranjo funciona porque a ferramenta
+escreve layout e o dev escreve scripts — conjuntos disjuntos. Numa **skin** os dois
+escreveriam as mesmas propriedades (sprite, cor, tamanho), e o override do artista mascararia
+todo re-export seguinte, em silêncio, justamente no caso para o qual a feature existe.
+
+Um prefab por nome canônico também elimina a ambiguidade de resolução por construção — e
+ambiguidade é o que dispara o caminho destrutivo do importador.
+
+**A regra prática:** ou a aparência de um componente vem do Figma, ou o prefab é do jogo.
+Nunca as duas na mesma propriedade. Quem precisa de um visual que o Figma não dita aponta um
+prefab próprio pela `UIMappingTable`, que existe exatamente para isso.
+
+O que sobrevive a um re-import do prefab do kit:
+
+| | |
+|---|---|
+| Componente que a ferramenta não gerencia (`AudioSource`, scripts do jogo) | **sobrevive** |
+| Aparência (sprite, cor, opacidade, layout, texto) | **é revertida para o design** |
+
+A reversão é intencional: sem ela, um botão que perdeu a transparência no Figma continuaria
+transparente na Unity para sempre.
+
+**Adoção.** Se já existe um prefab naquele nome que a ferramenta não gerou — o kit
+placeholder, ou um prefab feito à mão —, o import **para** e pede confirmação explícita.
+Adotar reconstrói o corpo; a referência do prefab e o rect da raiz sobrevivem, então as telas
+continuam apontando para ele.
 
 ---
 
@@ -165,12 +257,72 @@ builder nunca adivinha caminho de filho. Ver [`prefab-kit.md`](prefab-kit.md).
 | MAJOR igual, MINOR > do importador | Importa, avisa que o pacote é mais novo |
 | MAJOR diferente | **Recusa** com mensagem clara |
 
+Versão atual: **1.1.0**. A 1.1 acrescentou o bloco `kit`, opcional — um pacote de tela 1.0
+continua importando sem nenhuma diferença, e é por isso que a mudança é MINOR e não MAJOR.
+
 - **PATCH** — correção de descrição, sem efeito em dado.
 - **MINOR** — campo opcional novo, ou valor novo em enum tolerado por default.
 - **MAJOR** — campo removido/renomeado, obrigatoriedade nova, mudança de semântica.
 
 Recusar é deliberado: adivinhar a intenção de um pacote de outra major gera prefab
 silenciosamente errado, que é muito pior que um erro de import.
+
+---
+
+## 9-slice
+
+Sem borda, um fundo de botão achatado em PNG distorce ao esticar — os cantos arredondados
+achatam. `asset.nineSlice` resolve isso, e é preenchido de duas formas:
+
+| Fonte | Onde vale |
+|---|---|
+| Anotação `#9s(t,r,b,l)` no nome da layer | Sempre, tela ou componente |
+| Derivado do raio dos cantos + espessura do traço | **Só no export de componente** |
+
+A derivação não vale em tela de propósito: ali `#img` marca ilustração e logo, arte que
+fatiada sairia deformada. Num componente, `#img` é a pele do botão — exatamente o caso em que
+a borda tem que ser preservada.
+
+A anotação aceita 1, 2, 3 ou 4 valores, na mesma lógica do CSS: `#9s(12)` é tudo igual,
+`#9s(8,16)` é vertical/horizontal.
+
+**Cantos não são arestas.** `cornerRadius` é `[TL, TR, BR, BL]` e `nineSlice` é
+`[top, right, bottom, left]`: cada aresta encosta em dois cantos e recebe o maior dos dois.
+
+As bordas são sempre limitadas para caber no sprite, deixando ao menos 1px de área
+esticável por eixo — sem isso um botão em formato de pílula (raio = metade da altura) geraria
+um sprite degenerado, e esse é o formato de botão mais comum que existe. Quando o limite
+aperta uma borda anotada, o export avisa.
+
+Do lado da Unity, uma borda só tem efeito com `Image.Type.Sliced`, que o importador
+seleciona automaticamente quando o sprite tem borda.
+
+---
+
+## Dimensão de imagem
+
+O importador **relata** e nunca altera o pixel.
+
+O que de fato importa é a dimensão ser **múltipla de 4**: a compressão em blocos (ASTC, DXT,
+ETC) só se aplica nessa condição, e sem ela a textura fica em RGBA32, várias vezes maior na
+memória. **Potência de 2 quase nunca faz diferença para UI em UGUI** — é requisito de
+formatos e plataformas antigos, e tratá-la como problema geraria aviso em quase todo sprite.
+
+| Onde | O quê |
+|---|---|
+| Plugin, no export | `asset-not-multiple-of-4` e `asset-oversized` |
+| Unity, no import | `sprite/size-policy`, com a dimensão que atenderia |
+
+A política é configurável (`SpriteSizePolicy`): `MultipleOfFour` por padrão, `PowerOfTwo`
+para quem tem uma exigência concreta, `None` para silenciar.
+
+**Por que não corrigir automaticamente.** Corrigir exigiria preencher a textura com pixels
+transparentes e recortar o sprite de volta ao desenho. O recorte depende de
+`ISpriteEditorDataProvider`, que vive num pacote que este não quer impor a todo jogo que o
+instale; e preencher sem recortar espreme o desenho — imperceptível num fundo de 200px, 11%
+num ícone de 18px. Entre uma correção que às vezes deforma e um aviso preciso, o aviso é a
+escolha honesta. A correção de verdade é o `SpriteAtlas`, que resolve compressão e batching
+de uma vez.
 
 ---
 
@@ -183,16 +335,17 @@ Achatar em PNG via `#img` (o designer decide):
 
 Não implementado:
 
-- detecção automática de 9-slice — o campo `asset.nineSlice` existe no schema mas só é
-  preenchido por anotação explícita
 - geração de `SpriteAtlas`
-- estados/variantes automáticos — os estados vêm do prefab do kit
+- correção automática de dimensão de textura — ver acima
+- estados/variantes automáticos — só o default é exportado; os estados vêm do prefab
 - animações e transições
 - sistema de localização — `text.locKey` é só registrado
 - codegen de view tipada — no MVP o binding é `UIViewRefs.Get<T>(key)`
 - backend UI Toolkit
 - múltiplos breakpoints por tela
 - Figma REST API
+- componentes cuja geometria **é** o comportamento (`Slider`, `ScrollView`, `InputField`,
+  `ProgressBar`, `Tabs`) autorados no Figma — ver [`prefab-kit.md`](prefab-kit.md)
 
 ---
 
@@ -212,7 +365,8 @@ carrega nome nem e-mail de quem exportou, deliberadamente.
 **O pacote é dado não confiável.** O `ZipReader` valida antes de escrever qualquer byte:
 
 - normaliza cada entry path e rejeita `..`, path absoluto e letra de drive (zip-slip)
-- aceita apenas `ui.json` e `images/*.png`
+- aceita apenas `ui.json` **ou** `kit.json`, mais `images/*.png` — nunca as duas entradas JSON
+  no mesmo pacote
 - limita número de entries e tamanho total descomprimido (zip-bomb)
 - extrai em pasta temporária e só move para `Assets/` depois de tudo validar
 
@@ -231,10 +385,11 @@ passa por revisão antes de entrar no lockfile.
 | # | Entrega | Status |
 |---|---|---|
 | **M0** | Schema + docs do contrato | ✅ código pronto; falta a revisão com o dono da Library |
-| **M1** | Plugin Figma: traversal, mappers, lint, assets, zip | ✅ 69 testes, saída validada contra o schema |
+| **M1** | Plugin Figma: traversal, mappers, lint, assets, zip | ✅ 119 testes, saída validada contra o schema |
 | **M2** | Kit placeholder na Unity: 15 prefabs + `UIKitComponent`/slots | ✅ gerado por código, não commitado |
-| **M3** | Importador: unzip, gate de schema, resolver, solver, builder | ✅ 55 testes EditMode |
+| **M3** | Importador: unzip, gate de schema, resolver, solver, builder | ✅ 72 testes EditMode |
 | **M4** | Diff preview, report, fluxo base→Variant, sample, UPM | ✅ |
+| **M4.5** | Autoria de componente no Figma → prefab de kit, 9-slice, dimensão de textura | ✅ |
 | **M5** | Piloto: 1 jogo, 1 tela real, 1 designer parceiro | ⬜ depende de pessoas e de um arquivo real |
 
 ### Desvios do plano original, e por quê

@@ -4,7 +4,8 @@ Pipeline para o time de UI/UX montar interfaces no **Figma** e o time de engenha
 direto na **Unity (UGUI)**, sem remontar telas na mão.
 
 ```
-Figma ──[plugin]──► MinhaTela.uiexport ──[pacote UPM]──► Prefab UGUI montado
+Figma ──[plugin]──► MinhaTela.uiexport    ──[pacote UPM]──► Prefab da tela
+                └─► Button_Primary.uikit  ──[pacote UPM]──► Prefab do componente
 ```
 
 Este repositório é o **hub**: documentação, roadmap e samples. O código vive em dois
@@ -70,13 +71,21 @@ trabalho do dev sobreviver a um re-export do designer.
 
 ## Escopo
 
-O exportador cuida de **estrutura, layout, texto e hierarquia**. O visual — sprites, cores,
-9-slice, estados de botão — vem dos **prefabs do kit** de cada jogo. É por isso que o resultado
-usa os componentes reais do jogo, com áudio e navegação já funcionando, em vez de uma casca visual
-sem comportamento.
+O export de **tela** cuida de estrutura, layout, texto e hierarquia; o visual vem dos prefabs do
+kit de cada jogo. É por isso que o resultado usa os componentes reais do jogo, com áudio e
+navegação já funcionando, em vez de uma casca visual sem comportamento.
+
+O export de **componente** fecha o outro lado: o designer monta o botão no Figma e a Unity gera o
+prefab com a arte, o tamanho, o 9-slice e a tipografia do design, montando o comportamento por
+cima. Serve para não precisar esperar o prefab do jogo existir para ver a tela de pé.
+
+A regra que liga os dois: **a aparência de um componente vem do Figma ou do jogo, nunca das duas
+na mesma propriedade.**
 
 Fora do escopo: gradientes, sombras, blur, blend modes e vetores complexos, que são achatados em
-PNG pelo designer via a convenção `#img`. Lista completa em [contract.md](docs/contract.md).
+PNG pelo designer via a convenção `#img`; e os componentes cuja geometria *é* o comportamento
+(`Slider`, `ScrollView`, `InputField`…), que continuam vindo do prefab do jogo. Lista completa em
+[contract.md](docs/contract.md).
 
 ## Documentação
 
@@ -90,8 +99,9 @@ PNG pelo designer via a convenção `#img`. Lista completa em [contract.md](docs
 
 ## Samples
 
-[`samples/HomeMenu.uiexport`](samples/) é um pacote de exemplo, reproduzível byte a byte
-(`npm run sample` no repositório do plugin). Serve para exercitar o importador sem depender de um
-export real, e é o mesmo arquivo que o pacote da Unity carrega em `Samples~/` para os testes.
+[`samples/`](samples/) tem os dois pacotes de exemplo, reproduzíveis byte a byte
+(`npm run sample` no repositório do plugin): `HomeMenu.uiexport`, uma tela, e
+`Button_Primary.uikit`, um componente. Servem para exercitar o importador sem depender de um
+export real, e são os mesmos arquivos que o pacote da Unity carrega em `Samples~/` para os testes.
 
 > Ferramenta interna da Arvore.

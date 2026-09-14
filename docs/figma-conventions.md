@@ -64,18 +64,52 @@ Todo elemento interativo tem que ser uma instância de um componente do kit:
 
 A lista completa do que existe está em [`prefab-kit.md`](prefab-kit.md).
 
-Se você precisa de algo que **não está no kit**, não improvise com retângulos: fale com o
-dono da Library para o componente ser criado. Um componente novo no kit é meia hora de
-trabalho; uma tela cheia de improviso é uma semana de retrabalho do dev.
+Se você precisa de algo que **não está no kit**, não improvise com retângulos — crie o
+componente. Na aba **Criar kit** do plugin há duas saídas:
+
+- **Criar** ao lado de um componente canônico, para trazer só ele para este arquivo.
+- **Componente próprio**, com nome e papel, para o que não está no kit (`HUD/StatBar`,
+  `ItemSlot`). Ele já nasce com as layers de slot nomeadas.
 
 Instância de componente que não existe no kit gera **aviso**, e na Unity aparece como caixa
 genérica sem comportamento.
 
 ---
 
+## 2.1 Levar a aparência do componente para a Unity
+
+Por padrão o dev vê a estrutura da tela, e o visual dos botões vem dos prefabs do jogo. Se
+você quer que a **sua** arte chegue lá — o fundo, a cor, o raio, a tipografia —, exporte o
+componente.
+
+1. Selecione o **Component** (ou o Component Set, se tiver variantes).
+2. Aba **Componente** do plugin.
+3. Confira o nome canônico, o papel e os slots que ele encontrou.
+4. **Exportar** → gera `<Nome>.uikit`, que o dev importa pela mesma janela das telas.
+
+Três coisas que valem saber antes:
+
+**Precisa ser Component.** Um frame comum é recusado — selecione a layer e use *Create
+component*. É o erro mais provável de acontecer na primeira vez.
+
+**Só o estado default vai.** Se o componente tem variantes, o plugin exporta a `State=Default`
+e lista as outras como ignoradas. Os cinco estados continuam funcionando na Unity, por tint de
+cor sobre a arte que você mandou.
+
+**Exporte sempre da mesma variante.** Trocar a variante de origem depois faz o importador
+recusar o pacote: para ele, seria um componente inteiramente novo, e aceitar significaria
+refazer o prefab e perder o que o dev pendurou nele.
+
+Depois de exportado, aquele componente passa a ter a aparência ditada pelo Figma. Ajuste que o
+dev fizer na aparência daquele prefab é sobrescrito no próximo import — o combinado é que a
+aparência vem de um lado só.
+
+---
+
 ## 3. Prefixos e sufixos de nome
 
-Quatro convenções, todas no nome da layer.
+Seis convenções, todas no nome da layer. As quatro primeiras valem em tela; `$nome` e
+`#9s(...)` são de componente.
 
 ### `@Nome` — o dev precisa mexer nisso por código
 
@@ -123,6 +157,44 @@ como você desenhou. O custo é que fica uma imagem — não escala nem muda de 
 
 Se você usar gradiente/sombra/blur **sem** marcar `#img`, o plugin dá aviso e o efeito é
 simplesmente perdido no import. Marque.
+
+### `$nome` — aqui dentro entra conteúdo (só em componente)
+
+Prefixe com `$` a layer que o código vai preencher: o texto do botão, o ícone, o corpo da
+janela. É assim que o importador sabe onde escrever — sem isso o componente chega na Unity
+como uma casca que ninguém consegue preencher.
+
+```
+$label
+$icon
+$iconLeft
+$content
+$checkmark
+```
+
+Se o componente já usa **propriedades de componente** do Figma (`label`, `iconLeft`), elas
+são detectadas sozinhas e o `$` é dispensável. O prefixo existe para componente montado à
+mão.
+
+Vale só no export de componente; numa tela, o `$` é ignorado.
+
+### `nome#9s(t,r,b,l)` — esta imagem estica por fatias
+
+Fundo de botão, moldura de janela, barra: qualquer arte que precisa esticar sem deformar os
+cantos. Os quatro números são as bordas em px, na ordem do CSS.
+
+```
+frame#9s(12,12,12,12)
+frame#9s(12)          → os quatro lados iguais
+frame#9s(8,16)        → vertical, horizontal
+```
+
+**Num componente você quase nunca precisa disto:** a borda é derivada sozinha do raio dos
+cantos. Use a anotação quando o desenho não deixa inferir — uma moldura decorada mais larga
+que o raio, por exemplo.
+
+Numa tela, `#img` é ilustração e não é fatiado automaticamente; ali a anotação é a única
+forma.
 
 ### `nome:loc.chave` — este texto é traduzido
 
@@ -239,5 +311,17 @@ cada layer na mão.
 | `multiple-fills` | Fills empilhados; só o de cima é exportado |
 | `mixed-fills` | Fills mistos: nenhum fundo é exportado |
 | `empty-screen` | A tela não tem nenhuma layer dentro |
+| `asset-not-multiple-of-4` | Textura sem dimensão múltipla de 4: a compressão não se aplica e ela ocupa mais memória |
+| `asset-oversized` | Textura acima de 2048px: a Unity vai reduzi-la no import |
+| `nine-slice-too-large` | As bordas anotadas não cabem no sprite e foram reduzidas |
+
+**Só no export de componente:**
+
+| Regra | Problema |
+|---|---|
+| `component-root` (erro) | A seleção não é um Component, ou o nome não vira nome canônico |
+| `no-slots` | O componente não declara slot nenhum: o importador não tem onde escrever conteúdo |
+| `duplicate-slot` | Dois `$nome` iguais; vale o primeiro |
+| `variant-ignored` (info) | Variantes que não foram no pacote |
 
 Uma tela bem montada exporta com **zero avisos** — é esse o alvo, não "poucos avisos".
