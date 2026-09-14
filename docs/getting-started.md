@@ -75,9 +75,12 @@ clonado, ou uma pasta compartilhada com o `dist/` já buildado).
 
 1. Instale o pacote. No `Packages/manifest.json` do jogo:
    ```jsonc
-   "com.arvore.uiexporter": "file:../../ui-exporter-tool/unity-package"
+   "com.arvore.uiexporter": "https://github.com/VinniHashirama/ui-exporter-tool-unity-package.git#v0.2.0"
    ```
-   (ou a URL Git do repositório, quando ele estiver publicado)
+   **Sempre com a tag.** Sem ela o Package Manager fixa o commit que estava no `main` na hora
+   da instalação, e atualizar depois vira trabalho manual. Para subir de versão, troque a tag
+   — o Package Manager não tem botão de update para pacote de git, e isso é proposital: cada
+   jogo decide quando subir, em vez de um commit novo entrar sozinho no meio de uma sprint.
 
 2. Se o projeto for novo: `Window` → `TextMeshPro` → `Import TMP Essential Resources`. Sem
    isso não existe fonte default e nenhum texto renderiza.
