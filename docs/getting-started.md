@@ -194,6 +194,44 @@ o que você fez no Variant continua lá.
 
 ---
 
+## O ciclo por componente
+
+Use quando o visual do botão deve vir do Figma, e não do prefab do jogo — tipicamente porque
+ainda não existe prefab do jogo, e esperar por ele deixaria a tela importada como um monte de
+caixas cinzas.
+
+### Designer, no Figma
+
+1. Monte o componente e transforme em **Component** (`Ctrl/Cmd + Alt + K`). Frame comum é
+   recusado no export.
+2. Nomeie com o nome canônico — `Button/Primary`. Com variantes, o nome vai no **Component
+   Set**.
+3. Marque as layers que recebem conteúdo com `$`: `$label`, `$icon`. Se o componente já usa
+   propriedades de componente do Figma, elas são detectadas sozinhas.
+4. Selecione o componente e abra a aba **Componente** do plugin. Confira o nome, o papel e os
+   slots encontrados.
+5. **Exportar** → `Button_Primary.uikit`. Mande para o dev.
+
+### Dev, na Unity
+
+6. `Window → Arvore → UI Exporter`, **Escolher...**, selecione o `.uikit`.
+7. Confira o painel: nome canônico, papel, slots, e quantas telas instanciam esse componente.
+8. Se já existir um prefab naquele nome que a ferramenta não gerou — o kit placeholder, por
+   exemplo —, o import pede **adoção** explícita. Adotar reconstrói o corpo do prefab; a
+   referência dele sobrevive, então as telas continuam apontando para ele, mas o texto que elas
+   sobrescreviam nos slots volta ao default e vale re-importar essas telas depois.
+9. **Importar componente**. O prefab aparece em `Assets/UI/Generated/Kit/`.
+
+Daí em diante, aquele componente tem a aparência ditada pelo Figma: sprite, cor, tamanho, raio
+e tipografia são reescritos a cada import. Comportamento que você pendurar no prefab — um
+script, um `AudioSource` — sobrevive. Se precisar de um visual que o Figma não dita, aponte um
+prefab próprio pela `UIMappingTable` em vez de editar este.
+
+**Exporte sempre da mesma variante.** Trocar a variante de origem faz o importador recusar o
+pacote: os ids de node mudariam todos de uma vez e o prefab teria que ser refeito do zero.
+
+---
+
 ## Teste de fumaça em 10 minutos
 
 Antes de envolver o time, vale provar o caminho todo com uma tela mínima:

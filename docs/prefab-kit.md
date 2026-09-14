@@ -13,10 +13,46 @@ casem:
 
 | Lado | Como gerar |
 |---|---|
-| Figma | Plugin → aba **Criar kit** → `Criar kit nesta página` |
+| Figma | Plugin → aba **Criar kit** → `Criar kit nesta página`, ou **Criar** por componente |
 | Unity | `Window → Arvore → UI Exporter → Gerar kit placeholder` |
 
-`tests/kit.test.ts` no repositório do plugin verifica que as duas listas não divergiram.
+`tests/kit.test.ts` no repositório do plugin verifica que as listas não divergiram.
+
+---
+
+## De onde vem a aparência
+
+Há dois caminhos, e a diferença decide o que o dev vê na tela importada.
+
+**Padrão — a arte é do jogo.** O prefab do kit é montado na Unity pelo time do jogo, e a tela
+exportada só instancia ele. É o que permite a mesma tela virar interface com a identidade
+visual de jogos diferentes.
+
+**Autorado no Figma.** O designer monta o componente no Figma e exporta um `.uikit`; o
+importador gera o prefab com a arte, o tamanho, o 9-slice e a tipografia do design, e monta o
+comportamento por cima. É o caminho de quem não quer esperar o prefab do jogo existir para ver
+a tela de pé.
+
+Os dois convivem: cada `canonicalName` segue um ou outro. O que **não** existe é o meio-termo
+— num componente autorado no Figma, a aparência vem de lá e ajuste feito na mão é sobrescrito
+no próximo import. Quem quiser um visual que o Figma não dita aponta um prefab próprio pela
+`UIMappingTable`.
+
+### Skinável × estrutural
+
+| | Componentes | Por quê |
+|---|---|---|
+| **Skinável** | `Button/*`, `Label`, `Icon`, `Image`, `Panel` | O visual é superfície e conteúdo: dá para trocar a pele sem tocar no comportamento |
+| **Estrutural** | `Slider`, `ScrollView`, `InputField`, `ProgressBar`, `Tabs`, `Window/Modal`, `Toggle/Checkbox` | A geometria **é** o comportamento |
+
+Nos estruturais o componente não pode ser reconstruído a partir do desenho. `Slider` exige
+`fillRect` e `handleRect` com âncoras específicas; `ScrollRect` exige um viewport com máscara
+e um content com `ContentSizeFitter`. O desenho do Figma tem `Background`, `Fill` e `Handle`
+posicionados livremente, e aplicar as constraints do design por cima escreveria justamente as
+âncoras de que o `Slider` depende — o resultado brigaria consigo mesmo em runtime.
+
+Esses continuam vindo do prefab do jogo. Autorá-los no Figma é v2, e exigirá escrever
+*tokens* sobre o esqueleto existente em vez de reconstruir a hierarquia.
 
 ## Como o mapeamento funciona
 
@@ -139,7 +175,11 @@ cronograma de arte.
 ## Spec de entrega de arte (quando a arte real entrar)
 
 - **Fundos 9-slice:** PNG com as 4 bordas identificáveis; entregar as medidas de borda em px.
-  Área central mínima de 2×2px.
+  Área central mínima de 2×2px. Vindo do Figma, a borda é derivada do raio dos cantos — não
+  precisa entregar medida nenhuma.
+- **Dimensão:** múltiplo de 4 em ambos os lados. É o que a compressão em blocos (ASTC, DXT,
+  ETC) exige; sem isso a textura fica em RGBA32 e ocupa várias vezes mais memória. Potência de
+  2 não é necessária para UI. O importador relata quem não atende, mas não corrige.
 - **Ícones:** quadrados, tamanho base 64×64 @1x, exportar @2x. Padding interno de 4px @1x
   para não colar na borda.
 - **Estados:** entregar as cores dos 5 estados por componente; sprite diferente por estado

@@ -12,23 +12,65 @@ não tem, está marcado.
 | **M2** | Kit de prefabs placeholder na Unity | ✅ 15 prefabs gerados por código |
 | **M3** | Importador da Unity | ✅ 55 testes EditMode |
 | **M4** | Diff, relatório, fluxo base→Variant, sample, distribuição UPM | ✅ |
+| **M4.5** | **Autoria de componente no Figma → prefab de kit** | ✅ 24 testes novos |
 | **M5** | **Piloto: 1 jogo, 1 tela real, 1 designer parceiro** | ⬜ próximo passo |
+
+### M4.5 — o que entrou
+
+Feito antes do piloto de propósito: levar o piloto com botões que viram caixa cinza
+comprometeria a avaliação do designer parceiro, e a migração do kit custa zero agora que
+nenhum jogo usa a ferramenta.
+
+- **Criar componente avulso no Figma.** Botão `Criar` por componente, além do "criar tudo", e
+  um formulário de componente próprio (nome + papel) que já nasce com as layers de slot
+  nomeadas. A lista que o designer vê passou a ser derivada da mesma fonte que constrói — o
+  `<ul>` hardcoded que podia divergir saiu.
+- **Export de componente** (`.uikit`, `schemaVersion` 1.1.0) com slots, papel, variante de
+  origem travada e nomes de asset seguindo a spec de entrega de arte.
+- **Importador de componente** na Unity: um prefab por nome canônico, reconciliado, com
+  `UIKitComponent`, slots ligados por `nodeId` e o esqueleto de comportamento por papel.
+- **9-slice de verdade.** O campo existia no contrato e nunca era preenchido — e, mesmo
+  preenchido, não teria efeito, porque o importador sempre usava `Image.Type.Simple`. Agora é
+  derivado do raio, clampado para caber no sprite, e o tipo `Sliced` é selecionado.
+- **Dimensão de textura** relatada nos dois lados.
+
+### Bugs pré-existentes corrigidos junto
+
+Todos no caminho que **destrói trabalho do dev**, e nenhum tinha teste:
+
+- `ComponentResolver` varria os prefabs sem ordenar, então qual prefab um nome canônico
+  resolvia dependia da ordem do `AssetDatabase` — e mudar de prefab recria as instâncias.
+- Ambiguidade de `canonicalName` era aviso e o import seguia escolhendo arbitrariamente. Não
+  existe valor seguro a devolver ali: agora bloqueia.
+- O diff era calculado **antes** do resolver rodar, então troca de prefab escapava da única
+  confirmação do sistema. O resolver foi movido para o `Prepare` e o diff passou a prever
+  recriação.
+- `raycastTarget` e remoção de `Image` eram aplicados sem olhar se havia um `Selectable`
+  dependendo deles — latente hoje, fatal no modo de kit.
 
 ### O que está validado, e como
 
 | Item | Como foi verificado |
 |---|---|
 | Export de tela do Figma | **Manualmente, no Figma real** |
-| Travessia, lint, convenções, tokens | 74 testes com mock da API do Figma; saída validada contra o schema |
-| Import, reconciliação, layout, texto, segurança do zip | 55 testes EditMode no Unity 6000.3 |
+| Travessia, lint, convenções, tokens | 119 testes com mock da API do Figma; saída validada contra o schema |
+| Import, reconciliação, layout, texto, segurança do zip | 72 testes EditMode no Unity 6000.3 |
 | Trabalho do dev sobrevive a re-export | `Reimport_PreservesDevWorkInTheVariant` — o teste que decide o MVP |
+| Import de componente ponta a ponta | `KitImportTests`, com o `.uikit` de sample |
+| Botão importado é clicável | `Import_ButtonKeepsItsClickableArea` — o hazard que nenhum teste de asset pega |
 | Sample reproduzível byte a byte | Dois `npm run sample` seguidos produzem o mesmo hash |
 
 ### O que ainda não foi validado
 
-- **Botão de criar kit no Figma.** Foi adicionado depois da validação manual do export. As APIs
-  do Figma que ele usa passaram por typecheck contra as tipagens oficiais, mas nunca rodaram.
-  Quem rodar primeiro, conte o que aconteceu.
+- **Botão de criar kit no Figma, e a criação de componente avulso.** As APIs do Figma que eles
+  usam passaram por typecheck contra as tipagens oficiais, mas nunca rodaram. Quem rodar
+  primeiro, conte o que aconteceu. As falhas silenciosas de estilo foram removidas — o que der
+  errado agora aparece na lista de avisos do plugin em vez de virar um kit meio montado sem
+  explicação.
+- **Export de componente no Figma real.** O caminho é exercitado por 17 testes com o mock e
+  pelo sample, mas nunca saiu de um arquivo de verdade. A parte mais provável de surpreender é
+  a detecção de slots por `componentPropertyReferences`, que depende de como o Figma sufixa os
+  ids das propriedades.
 - **Ordem do array `fills`.** O plugin assume que o último elemento é o de cima. Se aparecer cor
   invertida em layer com fills empilhados, é isso — está marcado no código, e o linter já avisa
   quando há mais de um fill.
@@ -42,10 +84,15 @@ não tem, está marcado.
 Tema priorizado depois do primeiro teste real. Candidatos, em ordem aproximada de valor por
 esforço:
 
-- **Detecção automática de 9-slice.** Hoje o campo existe no contrato mas só é preenchido por
-  anotação explícita. Sem isso, janelas e botões achatados em `#img` distorcem ao escalar.
-- **Estados e variantes.** `State=Disabled` no Figma hoje não chega ao prefab; o import avisa e
-  monta no estado default.
+- **Geração de `SpriteAtlas`.** Subiu para o topo: resolve de uma vez a compressão de textura
+  (hoje só relatada) e o batching em telas com muitos ícones. É a correção de verdade para o
+  problema de dimensão que o importador hoje apenas aponta.
+- **Estados e variantes.** `State=Disabled` no Figma continua não chegando ao prefab; o export
+  manda só o default e os estados vêm do tint. Sprite por estado exigiria carregar as quatro
+  variantes no pacote.
+- **Componentes estruturais autorados no Figma.** `Slider`, `ScrollView`, `InputField`,
+  `ProgressBar` e `Tabs` — onde a geometria é o comportamento e o import precisaria escrever
+  tokens sobre o esqueleto em vez de reconstruir a hierarquia.
 - **`SPACE_BETWEEN` exato.** A aproximação atual joga o espaço para dentro dos itens. Dá para
   fazer exato com espaçadores de id sintético (`{idDoPai}#spacer0`), preservando a reconciliação.
 - **Calibração de métricas de texto.** `lineSpacing` e `characterSpacing` do TMP não estão nas
@@ -53,7 +100,6 @@ esforço:
   cena de teste visual por família.
 - **Gradientes.** Hoje viram cor chapada com aviso. Reconstruir exigiria material ou textura
   gerada.
-- **Geração de `SpriteAtlas`** para reduzir batches em telas com muitos ícones.
 
 ## Depois
 
