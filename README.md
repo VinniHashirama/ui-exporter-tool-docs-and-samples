@@ -8,6 +8,8 @@ Figma ──[plugin]──► MinhaTela.uiexport    ──[pacote UPM]──► 
                 └─► Button_Primary.uikit  ──[pacote UPM]──► Prefab do componente
 ```
 
+📖 **[Guia rápido (instalação + fluxo de uso)](https://vinnihashirama.github.io/ui-exporter-tool-docs-and-samples/)**
+
 Este repositório é o **hub**: documentação, roadmap e samples. O código vive em dois
 repositórios separados, por público-alvo.
 
