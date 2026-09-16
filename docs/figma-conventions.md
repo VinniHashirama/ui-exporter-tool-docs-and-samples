@@ -85,7 +85,7 @@ componente.
 1. Selecione o **Component** (ou o Component Set, se tiver variantes).
 2. Aba **Componente** do plugin.
 3. Confira o nome canônico, o papel e os slots que ele encontrou.
-4. **Exportar** → gera `<Nome>.uikit`, que o dev importa pela mesma janela das telas.
+4. **Exportar** → gera `<Nome>.uicomponent`, que o dev importa pela mesma janela das telas.
 
 Três coisas que valem saber antes:
 

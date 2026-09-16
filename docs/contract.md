@@ -10,21 +10,21 @@ divergência, **o schema manda**. Este doc explica o *porquê* de cada decisão.
 
 ## Os dois pacotes
 
-**Tela** — um zip com nome `<NomeDaTela>.uiexport`:
+**Tela** — um zip com nome `<NomeDaTela>.uiscreen`:
 
 ```
-HomeMenu.uiexport
-├─ ui.json              # o UIIR, valida contra schema/uiir.schema.json
+HomeMenu.uiscreen
+├─ screen.json          # o UIIR, valida contra schema/uiir.schema.json
 └─ images/
    ├─ hero@2x.png
    └─ logo@2x.png
 ```
 
-**Componente do kit** — um zip com nome `<NomeCanonico>.uikit`:
+**Componente do kit** — um zip com nome `<NomeCanonico>.uicomponent`:
 
 ```
-Button_Primary.uikit
-├─ kit.json             # o mesmo UIIR, com o bloco `kit` presente
+Button_Primary.uicomponent
+├─ component.json       # o mesmo UIIR, com o bloco `component` presente
 └─ images/
    └─ button-primary_bg_default@2x.png
 ```
@@ -32,23 +32,23 @@ Button_Primary.uikit
 Sem outras entradas. O importador **rejeita** o pacote inteiro se encontrar qualquer coisa
 fora desse formato — ver [Segurança](#segurança).
 
-O discriminador é o **nome da entrada JSON**, não o conteúdo: `ui.json` é tela, `kit.json` é
-componente. Um pacote com as duas é recusado. Decidir pelo conteúdo — "tem bloco `kit`, então
-é componente" — faria um pacote de componente com um campo faltando ser importado como tela,
-que é exatamente o tipo de erro silencioso que este contrato evita.
+O discriminador é o **nome da entrada JSON**, não o conteúdo: `screen.json` é tela,
+`component.json` é componente. Um pacote com as duas é recusado. Decidir pelo conteúdo — "tem
+bloco `component`, então é componente" — faria um pacote de componente com um campo faltando
+ser importado como tela, que é exatamente o tipo de erro silencioso que este contrato evita.
 
-O importador roteia pela extensão do arquivo, então um `.uikit` nunca é aberto como tela por
-engano.
+O importador roteia pela extensão do arquivo, então um `.uicomponent` nunca é aberto como tela
+por engano.
 
 ---
 
-## O bloco `kit`
+## O bloco `component`
 
-Presente só em `kit.json`. É o que faz o importador gerar um **prefab do kit** em vez de uma
-tela.
+Presente só em `component.json`. É o que faz o importador gerar um **prefab do kit** em vez de
+uma tela.
 
 ```jsonc
-"kit": {
+"component": {
   "canonicalName": "Button/Primary",
   "role": "button",                    // button|toggle|container|display|icon|image
   "sourceVariantId": "12:34",
@@ -257,8 +257,13 @@ builder nunca adivinha caminho de filho. Ver [`prefab-kit.md`](prefab-kit.md).
 | MAJOR igual, MINOR > do importador | Importa, avisa que o pacote é mais novo |
 | MAJOR diferente | **Recusa** com mensagem clara |
 
-Versão atual: **1.1.0**. A 1.1 acrescentou o bloco `kit`, opcional — um pacote de tela 1.0
-continua importando sem nenhuma diferença, e é por isso que a mudança é MINOR e não MAJOR.
+Versão atual: **2.0.0**. A 1.1 acrescentou o bloco opcional de componente (então chamado
+`kit`) — um pacote de tela 1.0 continua importando sem nenhuma diferença, e é por isso que
+aquela mudança foi MINOR e não MAJOR. A 2.0 é MAJOR e **quebra compatibilidade**: as
+extensões de pacote foram renomeadas (`.uiexport`→`.uiscreen`, `.uikit`→`.uicomponent`,
+`.uikitset`→`.uikit`), as entradas JSON internas também (`ui.json`→`screen.json`,
+`kit.json`→`component.json`, `kitset.json`→`kit.json`), e o bloco `kit` foi renomeado para
+`component`.
 
 - **PATCH** — correção de descrição, sem efeito em dado.
 - **MINOR** — campo opcional novo, ou valor novo em enum tolerado por default.
@@ -365,8 +370,8 @@ carrega nome nem e-mail de quem exportou, deliberadamente.
 **O pacote é dado não confiável.** O `ZipReader` valida antes de escrever qualquer byte:
 
 - normaliza cada entry path e rejeita `..`, path absoluto e letra de drive (zip-slip)
-- aceita apenas `ui.json` **ou** `kit.json`, mais `images/*.png` — nunca as duas entradas JSON
-  no mesmo pacote
+- aceita apenas `screen.json` **ou** `component.json`, mais `images/*.png` — nunca as duas
+  entradas JSON no mesmo pacote
 - limita número de entries e tamanho total descomprimido (zip-bomb)
 - extrai em pasta temporária e só move para `Assets/` depois de tudo validar
 

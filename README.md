@@ -4,8 +4,8 @@ Pipeline para o time de UI/UX montar interfaces no **Figma** e o time de engenha
 direto na **Unity (UGUI)**, sem remontar telas na mão.
 
 ```
-Figma ──[plugin]──► MinhaTela.uiexport    ──[pacote UPM]──► Prefab da tela
-                └─► Button_Primary.uikit  ──[pacote UPM]──► Prefab do componente
+Figma ──[plugin]──► MinhaTela.uiscreen    ──[pacote UPM]──► Prefab da tela
+                └─► Button_Primary.uicomponent  ──[pacote UPM]──► Prefab do componente
 ```
 
 📖 **[Guia rápido (instalação + fluxo de uso)](https://vinnihashirama.github.io/ui-exporter-tool-docs-and-samples/)**
@@ -44,8 +44,8 @@ O pipeline tem exatamente **dois artefatos** e **nenhum servidor**:
 
 | Artefato | Onde roda | O que faz |
 |---|---|---|
-| Plugin | Figma desktop (TypeScript) | Lê a seleção, valida contra as convenções, gera o `.uiexport` |
-| Pacote | Unity 6 Editor (C#) | Lê o `.uiexport` e monta ou atualiza o prefab |
+| Plugin | Figma desktop (TypeScript) | Lê a seleção, valida contra as convenções, gera o `.uiscreen` |
+| Pacote | Unity 6 Editor (C#) | Lê o `.uiscreen` e monta ou atualiza o prefab |
 
 A fronteira entre os dois é o **UIIR** — um JSON versionado, descrito em
 [`schema/uiir.schema.json`](https://github.com/VinniHashirama/ui-exporter-tool-figma-plugin/blob/main/schema/uiir.schema.json).
@@ -57,7 +57,7 @@ sabe o que é um node do Figma.
 **Designer** monta a tela num frame `screen/NomeDaTela` usando instâncias dos componentes do kit,
 marca `@` no que o código acessa, roda o plugin, zera os erros do linter e exporta.
 
-**Dev** escolhe o `.uiexport` na janela do importador, confere o diff, importa, e trabalha no
+**Dev** escolhe o `.uiscreen` na janela do importador, confere o diff, importa, e trabalha no
 **Prefab Variant** — nunca no `_Base`.
 
 ### A regra de ouro
@@ -102,8 +102,8 @@ PNG pelo designer via a convenção `#img`; e os componentes cuja geometria *é*
 ## Samples
 
 [`samples/`](samples/) tem os dois pacotes de exemplo, reproduzíveis byte a byte
-(`npm run sample` no repositório do plugin): `HomeMenu.uiexport`, uma tela, e
-`Button_Primary.uikit`, um componente. Servem para exercitar o importador sem depender de um
+(`npm run sample` no repositório do plugin): `HomeMenu.uiscreen`, uma tela, e
+`Button_Primary.uicomponent`, um componente. Servem para exercitar o importador sem depender de um
 export real, e são os mesmos arquivos que o pacote da Unity carrega em `Samples~/` para os testes.
 
 > Ferramenta interna da Arvore.

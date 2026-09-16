@@ -28,7 +28,7 @@ Há dois caminhos, e a diferença decide o que o dev vê na tela importada.
 exportada só instancia ele. É o que permite a mesma tela virar interface com a identidade
 visual de jogos diferentes.
 
-**Autorado no Figma.** O designer monta o componente no Figma e exporta um `.uikit`; o
+**Autorado no Figma.** O designer monta o componente no Figma e exporta um `.uicomponent`; o
 importador gera o prefab com a arte, o tamanho, o 9-slice e a tipografia do design, e monta o
 comportamento por cima. É o caminho de quem não quer esperar o prefab do jogo existir para ver
 a tela de pé.

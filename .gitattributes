@@ -1,3 +1,5 @@
-*.uiexport binary
+*.uiscreen binary
+*.uicomponent binary
+*.uikit binary
 *.md text eol=lf
 *.json text eol=lf

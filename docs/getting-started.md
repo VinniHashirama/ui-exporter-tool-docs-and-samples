@@ -158,7 +158,7 @@ com retângulo gera aviso no linter e, na Unity, uma caixa sem comportamento.
 7. **Leia o relatório.** Erro bloqueia o export e a mensagem diz o que corrigir. Aviso passa,
    mas alguém paga depois. Clicar num item leva a viewport até a layer.
 
-8. **Exportar** → o navegador baixa `NomeDaTela.uiexport`. Entregue esse arquivo ao dev, ou
+8. **Exportar** → o navegador baixa `NomeDaTela.uiscreen`. Entregue esse arquivo ao dev, ou
    deixe na pasta combinada.
 
 O alvo é exportar com **zero avisos**, não "poucos avisos". A referência completa das regras
@@ -166,7 +166,7 @@ está em [`figma-conventions.md`](figma-conventions.md).
 
 ### Dev, na Unity
 
-9. `Window` → `Arvore` → `UI Exporter` → **Escolher...** → selecione o `.uiexport`.
+9. `Window` → `Arvore` → `UI Exporter` → **Escolher...** → selecione o `.uiscreen`.
 
 10. **Confira o diff.** A janela mostra o que vai ser criado, preservado e **removido**.
     Remoção é a única operação que destrói trabalho: se um objeto desapareceu do design, o
@@ -213,11 +213,11 @@ caixas cinzas.
    propriedades de componente do Figma, elas são detectadas sozinhas.
 4. Selecione o componente e abra a aba **Componente** do plugin. Confira o nome, o papel e os
    slots encontrados.
-5. **Exportar** → `Button_Primary.uikit`. Mande para o dev.
+5. **Exportar** → `Button_Primary.uicomponent`. Mande para o dev.
 
 ### Dev, na Unity
 
-6. `Window → Arvore → UI Exporter`, **Escolher...**, selecione o `.uikit`.
+6. `Window → Arvore → UI Exporter`, **Escolher...**, selecione o `.uicomponent`.
 7. Confira o painel: nome canônico, papel, slots, e quantas telas instanciam esse componente.
 8. Se já existir um prefab naquele nome que a ferramenta não gerou — o kit placeholder, por
    exemplo —, o import pede **adoção** explícita. Adotar reconstrói o corpo do prefab; a
@@ -255,7 +255,7 @@ Se o passo 7 funcionar, o pipeline está de pé.
 versionado, sem depender de ninguém:
 
 ```bash
-bash tools~/unity-test.sh   # no repo do pacote: roda o pipeline contra Samples~/HomeMenu.uiexport
+bash tools~/unity-test.sh   # no repo do pacote: roda o pipeline contra Samples~/HomeMenu.uiscreen
 ```
 
 ---

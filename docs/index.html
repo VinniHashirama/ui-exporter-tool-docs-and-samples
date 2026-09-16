@@ -110,8 +110,8 @@
     <a href="https://github.com/VinniHashirama/ui-exporter-tool-unity-package">🎮 pacote Unity</a>
   </div>
 
-  <pre class="diagram">Figma ──[plugin]──► MinhaTela.uiexport    ──[pacote UPM]──► Prefab da tela
-      └─► Button_Primary.uikit  ──[pacote UPM]──► Prefab do componente</pre>
+  <pre class="diagram">Figma ──[plugin]──► MinhaTela.uiscreen    ──[pacote UPM]──► Prefab da tela
+      └─► Button_Primary.uicomponent  ──[pacote UPM]──► Prefab do componente</pre>
 
   <nav class="jump">
     <a href="#instalacao-plugin">Instalar plugin</a>
@@ -177,12 +177,12 @@ npm run build          # gera dist/code.js e dist/ui.html</code></pre>
         <code>hero#img</code> (ilustração/gradiente/sombra vira PNG), <code>title:loc.menu.title</code> (texto traduzível).</li>
       <li>Selecione o frame raiz → <code>Plugins → Development → Arvore UI Exporter</code>.</li>
       <li>Leia o relatório: erro bloqueia o export, aviso passa mas alguém paga depois. Alvo é <strong>zero avisos</strong>.</li>
-      <li>Exporte → baixa <code>NomeDaTela.uiexport</code>. Entregue ao dev.</li>
+      <li>Exporte → baixa <code>NomeDaTela.uiscreen</code>. Entregue ao dev.</li>
     </ol>
 
     <h3>Dev, na Unity</h3>
     <ol start="8">
-      <li><code>Window → Arvore → UI Exporter → Escolher...</code> → selecione o <code>.uiexport</code>.</li>
+      <li><code>Window → Arvore → UI Exporter → Escolher...</code> → selecione o <code>.uiscreen</code>.</li>
       <li>Confira o <strong>diff</strong>: o que será criado, preservado e <strong>removido</strong>. Remoção é a única
         operação destrutiva — nada é escrito até confirmar.</li>
       <li>Importe. Leia o relatório: componente não mapeado, fonte faltando, aproximação de layout.</li>
@@ -208,12 +208,12 @@ view.Get&lt;TMP_Text&gt;("CoinLabel").text = coins.ToString();</code></pre>
       <li>Nomeie com o nome canônico, ex. <code>Button/Primary</code> (variantes vão no Component Set).</li>
       <li>Marque slots de conteúdo com <code>$</code>: <code>$label</code>, <code>$icon</code>.</li>
       <li>Aba <strong>Componente</strong> do plugin → confira nome, papel e slots detectados.</li>
-      <li>Exporte → <code>Button_Primary.uikit</code>. Mande ao dev.</li>
+      <li>Exporte → <code>Button_Primary.uicomponent</code>. Mande ao dev.</li>
     </ol>
 
     <h3>Dev, na Unity</h3>
     <ol start="6">
-      <li><code>Window → Arvore → UI Exporter</code>, escolha o <code>.uikit</code>.</li>
+      <li><code>Window → Arvore → UI Exporter</code>, escolha o <code>.uicomponent</code>.</li>
       <li>Confira nome canônico, papel, slots e quantas telas já instanciam esse componente.</li>
       <li>Prefab existente com esse nome (ex. kit placeholder) pede <strong>adoção</strong> explícita — reconstrói o
         corpo, a referência sobrevive, mas overrides de texto voltam ao default.</li>
@@ -233,7 +233,7 @@ view.Get&lt;TMP_Text&gt;("CoinLabel").text = coins.ToString();</code></pre>
       <li>Adicione um script no Variant, peça um re-export com o botão movido, importe de novo — o script tem que sobreviver.</li>
     </ol>
     <p>Sem acesso ao Figma, rode contra o pacote de exemplo já versionado:
-      <code>bash tools~/unity-test.sh</code> (no repo do pacote, usa <code>Samples~/HomeMenu.uiexport</code>).</p>
+      <code>bash tools~/unity-test.sh</code> (no repo do pacote, usa <code>Samples~/HomeMenu.uiscreen</code>).</p>
   </section>
 
   <section id="erros">

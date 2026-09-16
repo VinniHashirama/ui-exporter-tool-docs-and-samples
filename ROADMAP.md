@@ -25,7 +25,7 @@ nenhum jogo usa a ferramenta.
   um formulário de componente próprio (nome + papel) que já nasce com as layers de slot
   nomeadas. A lista que o designer vê passou a ser derivada da mesma fonte que constrói — o
   `<ul>` hardcoded que podia divergir saiu.
-- **Export de componente** (`.uikit`, `schemaVersion` 1.1.0) com slots, papel, variante de
+- **Export de componente** (`.uicomponent`, `schemaVersion` 1.1.0) com slots, papel, variante de
   origem travada e nomes de asset seguindo a spec de entrega de arte.
 - **Importador de componente** na Unity: um prefab por nome canônico, reconciliado, com
   `UIKitComponent`, slots ligados por `nodeId` e o esqueleto de comportamento por papel.
@@ -56,7 +56,7 @@ Todos no caminho que **destrói trabalho do dev**, e nenhum tinha teste:
 | Travessia, lint, convenções, tokens | 119 testes com mock da API do Figma; saída validada contra o schema |
 | Import, reconciliação, layout, texto, segurança do zip | 72 testes EditMode no Unity 6000.3 |
 | Trabalho do dev sobrevive a re-export | `Reimport_PreservesDevWorkInTheVariant` — o teste que decide o MVP |
-| Import de componente ponta a ponta | `KitImportTests`, com o `.uikit` de sample |
+| Import de componente ponta a ponta | `KitImportTests`, com o `.uicomponent` de sample |
 | Botão importado é clicável | `Import_ButtonKeepsItsClickableArea` — o hazard que nenhum teste de asset pega |
 | Sample reproduzível byte a byte | Dois `npm run sample` seguidos produzem o mesmo hash |
 
