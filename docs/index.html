@@ -126,28 +126,23 @@
   <section id="instalacao">
     <h2>Instalação <span class="who">uma vez por pessoa</span></h2>
 
-    <div class="callout">
-      Conta gratuita do Figma resolve. Duas pegadinhas: o plugin em desenvolvimento só carrega no
-      <strong>app desktop</strong> (não no navegador), e publicar uma <strong>Library</strong> compartilhada exige
-      plano pago — sem ela o kit ainda funciona, só não propaga automaticamente para outras telas.
-      Não precisa de Dev Mode nem token: o plugin não faz nenhuma chamada de rede.
-    </div>
-
     <div class="step-block" id="instalacao-plugin">
       <h3>1. Plugin do Figma <span class="who">dev</span></h3>
       <pre><code>cd figma-plugin
 npm ci --ignore-scripts
 npm run build          # gera dist/code.js e dist/ui.html</code></pre>
-      <p>No <strong>Figma desktop</strong>: <code>Plugins → Development → Import plugin from manifest...</code> →
-      escolha o <code>manifest.json</code> do repositório do plugin. Cada designer repete esse import uma vez,
-      apontando para a mesma pasta buildada.</p>
+      <p>No Figma: <code>Plugins → Development → Import plugin from manifest...</code> →
+      localize e selecione o <code>manifest.json</code> do repositório do plugin. Cada designer repete esse import
+      uma vez, apontando para a mesma pasta buildada.</p>
     </div>
 
     <div class="step-block" id="instalacao-unity">
       <h3>2. Pacote Unity <span class="who">dev</span></h3>
       <ol>
-        <li>No <code>Packages/manifest.json</code> do jogo, sempre travando numa tag:
-          <pre><code>"com.arvore.uiexporter": "https://github.com/VinniHashirama/ui-exporter-tool-unity-package.git#v0.2.0"</code></pre>
+        <li>Instale via Package Manager: <code>Window → Package Manager → + → Add package from git URL...</code>
+          <pre><code>https://github.com/VinniHashirama/ui-exporter-tool-unity-package.git</code></pre>
+          Não precisa travar numa tag — dá para usar a versão mais atual sem problema. Se preferir editar direto,
+          o mesmo endereço vale como valor de <code>com.arvore.uiexporter</code> no <code>Packages/manifest.json</code>.
         </li>
         <li>Projeto novo: <code>Window → TextMeshPro → Import TMP Essential Resources</code> (sem isso nenhum texto renderiza).</li>
         <li><code>Window → Arvore → UI Exporter → Gerar kit placeholder</code> — cria os 15 prefabs canônicos.</li>

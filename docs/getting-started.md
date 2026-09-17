@@ -5,55 +5,6 @@ vez, e o ciclo por tela, que é o que vai virar rotina.
 
 ---
 
-## Preciso de conta paga no Figma?
-
-**Não para rodar a ferramenta.** Tudo que o pipeline precisa funciona em conta gratuita.
-Mas há dois detalhes que mudam como o time trabalha.
-
-### 1. O plugin em desenvolvimento exige o app desktop do Figma
-
-Isto contraria a suposição inicial de "montar as interfaces no Figma **Web**", então vale ser
-explícito: para carregar um plugin a partir de um `manifest.json` local, o Figma precisa ler
-arquivos do seu disco — e o navegador não pode fazer isso. Não é limitação de plano, é
-limitação de sandbox do navegador.
-
-Três caminhos, do mais simples ao mais burocrático:
-
-| Caminho | Custo | Consequência |
-|---|---|---|
-| **Designers usam o app desktop** | Grátis | Recomendado. Mesma conta, mesmos arquivos, mesmo tudo — só um app instalado |
-| Publicar o plugin privado para a organização | Exige plano Organization | Roda no Web, mas o plugin fica atrelado à org |
-| Publicar público na Community | Grátis | Roda no Web, mas o plugin fica visível para qualquer pessoa |
-
-O app desktop resolve, e o arquivo continua o mesmo na nuvem: o designer pode desenhar no Web
-e só abrir o desktop na hora de exportar, se preferir.
-
-### 2. Biblioteca compartilhada (Library publicada) é recurso pago
-
-Componentes e variantes funcionam em conta gratuita. O que **não** funciona é *publicar* uma
-Library para outros arquivos consumirem — isso é do plano Professional para cima.
-
-Na prática, sem plano pago:
-
-- O kit canônico vive **dentro de um arquivo mestre**, e cada tela nova nasce de uma cópia
-  desse arquivo, ou os componentes são copiados para o arquivo da tela.
-- O exportador funciona igual: ele lê o nome canônico do componente, e não se importa se ele
-  vem de uma Library publicada ou de um componente local.
-- O que se perde é a propagação automática: mudar o botão no kit não atualiza as telas que já
-  existem, porque não há vínculo de Library.
-
-Dá para começar o piloto assim e resolver depois. Só não dá para chamar de design system
-compartilhado — e essa é a diferença que justifica o plano pago quando o time crescer.
-
-**Não precisa de Dev Mode nem de Personal Access Token.** O pipeline não usa a REST API do
-Figma, e o plugin não faz nenhuma chamada de rede (`networkAccess: ["none"]` no manifest).
-Isso é verificável, e é o que faz o fluxo não ter nenhum segredo para vazar.
-
-> Planos e nomes de recurso do Figma mudam com frequência. Confirme os termos atuais antes de
-> decidir compra.
-
----
-
 ## Instalação (uma vez)
 
 ### Lado dev — o plugin
@@ -73,14 +24,13 @@ clonado, ou uma pasta compartilhada com o `dist/` já buildado).
 
 ### Lado dev — a Unity
 
-1. Instale o pacote. No `Packages/manifest.json` do jogo:
-   ```jsonc
-   "com.arvore.uiexporter": "https://github.com/VinniHashirama/ui-exporter-tool-unity-package.git#v0.2.0"
+1. Instale via **Package Manager**: `Window → Package Manager → + → Add package from git URL...`
    ```
-   **Sempre com a tag.** Sem ela o Package Manager fixa o commit que estava no `main` na hora
-   da instalação, e atualizar depois vira trabalho manual. Para subir de versão, troque a tag
-   — o Package Manager não tem botão de update para pacote de git, e isso é proposital: cada
-   jogo decide quando subir, em vez de um commit novo entrar sozinho no meio de uma sprint.
+   https://github.com/VinniHashirama/ui-exporter-tool-unity-package.git
+   ```
+   Não precisa travar numa tag — dá para usar a versão mais atual sem problema. Se preferir
+   editar direto, o mesmo endereço vale como valor de `com.arvore.uiexporter` no
+   `Packages/manifest.json`.
 
 2. Se o projeto for novo: `Window` → `TextMeshPro` → `Import TMP Essential Resources`. Sem
    isso não existe fonte default e nenhum texto renderiza.
@@ -125,7 +75,7 @@ canônico, e peça ao dev para criar o prefab equivalente na Unity com o mesmo n
 com retângulo gera aviso no linter e, na Unity, uma caixa sem comportamento.
 
 > Sem plano pago você não consegue *publicar* essa página como Library. O kit funciona igual —
-> só não propaga para outros arquivos. Ver a seção sobre planos acima.
+> só não propaga automaticamente para outros arquivos.
 
 ---
 
